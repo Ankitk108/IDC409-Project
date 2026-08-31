@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from .config import DB_PATH, RANDOM_STATE, TEST_SIZE
+from .config import DB_PATH, RANDOM_STATE, TEST_SIZE, VALIDATION_SIZE
 from .db import table_exists, write_table
 
 
@@ -61,10 +61,15 @@ def audit_frame(frame: pd.DataFrame) -> dict[str, Any]:
 def assign_split(
     frame: pd.DataFrame,
     label_column: str,
+    validation_size: float = VALIDATION_SIZE,
     test_size: float = TEST_SIZE,
     random_state: int = RANDOM_STATE,
 ) -> pd.DataFrame:
-    """Add one reproducible, label-stratified train/test assignment."""
+    """Add one reproducible, stratified train/validation/test assignment.
+
+    ``validation_size`` and ``test_size`` are fractions of the complete dataset,
+    not fractions of the intermediate remainder.
+    """
     if label_column not in frame.columns:
         raise KeyError(f"Label column not found: {label_column}")
     if "split" in frame.columns:
@@ -73,16 +78,27 @@ def assign_split(
         raise ValueError("Labels contain missing values; resolve them before splitting")
     if frame[label_column].nunique() != 2:
         raise ValueError("Binary classification requires exactly two label values")
+    if validation_size <= 0 or test_size <= 0:
+        raise ValueError("Validation and test sizes must both be greater than zero")
+    if validation_size + test_size >= 1:
+        raise ValueError("Validation and test sizes must leave a non-empty train split")
 
-    train_indices, test_indices = train_test_split(
+    development_indices, test_indices = train_test_split(
         frame.index,
         test_size=test_size,
         random_state=random_state,
         stratify=frame[label_column],
     )
+    validation_fraction_of_remainder = validation_size / (1 - test_size)
+    train_indices, validation_indices = train_test_split(
+        development_indices,
+        test_size=validation_fraction_of_remainder,
+        random_state=random_state,
+        stratify=frame.loc[development_indices, label_column],
+    )
     result = frame.copy()
     result["split"] = ""
     result.loc[train_indices, "split"] = "train"
+    result.loc[validation_indices, "split"] = "validation"
     result.loc[test_indices, "split"] = "test"
     return result
-

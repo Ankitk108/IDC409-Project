@@ -21,3 +21,5 @@ is placed in `data/raw/`.
 Raw data, generated SQLite databases, trained models, and internal planning documents
 are deliberately excluded from Git.
 
+Every model uses the same persisted, label-stratified 70/15/15 assignment: training
+for fitting, validation for tuning and selection, and test for final evaluation only.

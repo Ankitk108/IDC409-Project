@@ -41,14 +41,30 @@ class DataIoTests(unittest.TestCase):
                 load_raw_to_db(csv_path, db_path=db_path)
 
     def test_assign_split_is_reproducible_and_stratified(self) -> None:
-        first = assign_split(self.frame, "label", test_size=0.2)
-        second = assign_split(self.frame, "label", test_size=0.2)
+        frame = pd.DataFrame(
+            {"feature": range(100), "label": [0, 1] * 50}
+        )
+        first = assign_split(
+            frame, "label", validation_size=0.2, test_size=0.2
+        )
+        second = assign_split(
+            frame, "label", validation_size=0.2, test_size=0.2
+        )
         pd.testing.assert_series_equal(first["split"], second["split"])
+
+        train_rows = first[first["split"] == "train"]
+        validation_rows = first[first["split"] == "validation"]
         test_rows = first[first["split"] == "test"]
-        self.assertEqual(len(test_rows), 4)
-        self.assertEqual(test_rows["label"].value_counts().to_dict(), {0: 2, 1: 2})
+        self.assertEqual(len(train_rows), 60)
+        self.assertEqual(len(validation_rows), 20)
+        self.assertEqual(len(test_rows), 20)
+        for split_rows in (train_rows, validation_rows, test_rows):
+            self.assertEqual(split_rows["label"].value_counts().nunique(), 1)
+
+    def test_assign_split_rejects_invalid_fractions(self) -> None:
+        with self.assertRaises(ValueError):
+            assign_split(self.frame, "label", validation_size=0.5, test_size=0.5)
 
 
 if __name__ == "__main__":
     unittest.main()
-
