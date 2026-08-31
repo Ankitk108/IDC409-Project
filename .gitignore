@@ -1,0 +1,11 @@
+data/raw/
+data/processed/
+data/continuum.db
+docs/
+*.pkl
+*.joblib
+.ipynb_checkpoints/
+__pycache__/
+.pytest_cache/
+.venv/
+
