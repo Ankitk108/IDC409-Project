@@ -1,4 +1,5 @@
 data/raw/
+data/interim/
 data/processed/
 data/continuum.db
 docs/
@@ -8,4 +9,4 @@ docs/
 .ipynb_checkpoints/
 __pycache__/
 .pytest_cache/
-.venv/
+venv/
