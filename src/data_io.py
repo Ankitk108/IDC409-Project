@@ -119,22 +119,25 @@ def assign_split(
     if validation_size + test_size >= 1:
         raise ValueError("Validation and test sizes must leave a non-empty train split")
 
-    development_indices, test_indices = train_test_split(
-        frame.index,
+    # Index labels can repeat, so split unique row positions rather than labels.
+    row_positions = np.arange(len(frame))
+    development_positions, test_positions = train_test_split(
+        row_positions,
         test_size=test_size,
         random_state=random_state,
-        stratify=frame[label_column],
+        stratify=frame[label_column].to_numpy(),
     )
     validation_fraction_of_remainder = validation_size / (1 - test_size)
-    train_indices, validation_indices = train_test_split(
-        development_indices,
+    train_positions, validation_positions = train_test_split(
+        development_positions,
         test_size=validation_fraction_of_remainder,
         random_state=random_state,
-        stratify=frame.loc[development_indices, label_column],
+        stratify=frame[label_column].iloc[development_positions].to_numpy(),
     )
     result = frame.copy()
     result["split"] = ""
-    result.loc[train_indices, "split"] = "train"
-    result.loc[validation_indices, "split"] = "validation"
-    result.loc[test_indices, "split"] = "test"
+    split_column_position = result.columns.get_loc("split")
+    result.iloc[train_positions, split_column_position] = "train"
+    result.iloc[validation_positions, split_column_position] = "validation"
+    result.iloc[test_positions, split_column_position] = "test"
     return result

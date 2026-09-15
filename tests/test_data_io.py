@@ -67,6 +67,27 @@ class DataIoTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             assign_split(self.frame, "label", validation_size=0.5, test_size=0.5)
 
+    def test_assign_split_keeps_duplicate_index_rows_disjoint(self) -> None:
+        frame = pd.DataFrame(
+            {"feature": range(100), "label": [0, 1] * 50},
+            index=[position // 2 for position in range(100)],
+        )
+        result = assign_split(
+            frame, "label", validation_size=0.2, test_size=0.2
+        )
+        self.assertEqual(result.index.tolist(), frame.index.tolist())
+        self.assertEqual(result["split"].value_counts().to_dict(),
+                         {"train": 60, "validation": 20, "test": 20})
+        for split in ("train", "validation", "test"):
+            self.assertEqual(result.loc[result["split"] == split, "label"]
+                             .value_counts().to_dict(),
+                             {0: len(result.loc[result["split"] == split]) // 2,
+                              1: len(result.loc[result["split"] == split]) // 2})
+        repeated = assign_split(
+            frame, "label", validation_size=0.2, test_size=0.2
+        )
+        pd.testing.assert_series_equal(result["split"], repeated["split"])
+
     def test_professor_mapping_excludes_truth_and_exported_number(self) -> None:
         raw = pd.DataFrame({
             "Unnamed: 0": [0, 1, 1, 3, 4, 5],

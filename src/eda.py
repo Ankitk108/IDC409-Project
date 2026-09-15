@@ -19,6 +19,8 @@ def training_events(events: pd.DataFrame) -> pd.DataFrame:
 
 def feature_columns(train: pd.DataFrame) -> list[str]:
     """Return only finite numeric measurements, never truth or split columns."""
+    if {"type", "Unnamed: 0"} & set(train.columns):
+        raise ValueError("EDA requires prepared physics data, not raw truth or row numbers")
     features = [column for column in train if column not in {"target", "split"}]
     if not features or not all(pd.api.types.is_numeric_dtype(train[c]) for c in features):
         raise ValueError("EDA features must be non-empty and numeric")

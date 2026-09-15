@@ -30,6 +30,13 @@ class EDATests(unittest.TestCase):
             rank.loc[rank["feature"] == "R2", "signal_median"].item(), 0.15
         )
 
+    def test_raw_truth_and_exported_number_are_not_eda_features(self):
+        train = training_events(self.events)
+        for reserved in ("type", "Unnamed: 0"):
+            with self.subTest(reserved=reserved):
+                with self.assertRaises(ValueError):
+                    feature_columns(train.assign(**{reserved: 0}))
+
 
 if __name__ == "__main__":
     unittest.main()
