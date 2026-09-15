@@ -61,6 +61,18 @@ def audit_frame(frame: pd.DataFrame) -> dict[str, Any]:
 def prepare_professor_binary(frame: pd.DataFrame) -> pd.DataFrame:
     """Map the instructor's six process flags to the binary project target.
 
+    Original ``type`` flags describe the generated event process:
+        0: e+ e- -> Upsilon(4S) -> B+ B- (charged B-meson pair)
+        1: e+ e- -> Upsilon(4S) -> B0 anti-B0 (neutral B-meson pair)
+        2: e+ e- -> c anti-c (charm continuum)
+        3: e+ e- -> u anti-u (up-quark continuum)
+        4: e+ e- -> d anti-d (down-quark continuum)
+        5: e+ e- -> s anti-s (strange-quark continuum)
+
+    The professor's binary instruction combines flags 0 and 1 as signal
+    (``target=1``), and flags 2, 3, 4, and 5 as continuum background
+    (``target=0``). The target is a label, never a model input feature.
+
     Keep all physics measurements and all rows. The exported pandas row number
     and six-way truth flag are not model features.
     """
