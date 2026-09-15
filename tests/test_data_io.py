@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.data_io import assign_split, audit_frame, load_raw_to_db
+from src.data_io import (
+    assign_split, audit_frame, load_raw_to_db, prepare_professor_binary
+)
 from src.db import read_table
 
 
@@ -64,6 +66,23 @@ class DataIoTests(unittest.TestCase):
     def test_assign_split_rejects_invalid_fractions(self) -> None:
         with self.assertRaises(ValueError):
             assign_split(self.frame, "label", validation_size=0.5, test_size=0.5)
+
+    def test_professor_mapping_excludes_truth_and_exported_number(self) -> None:
+        raw = pd.DataFrame({
+            "Unnamed: 0": [0, 1, 1, 3, 4, 5],
+            "R2": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+            "type": [0, 1, 2, 3, 4, 5],
+        })
+        prepared = prepare_professor_binary(raw)
+        self.assertEqual(prepared.columns.tolist(), ["R2", "target"])
+        self.assertEqual(prepared["target"].tolist(), [1, 1, 0, 0, 0, 0])
+        self.assertEqual(raw.columns.tolist(), ["Unnamed: 0", "R2", "type"])
+        self.assertEqual(len(prepared), len(raw))
+
+    def test_professor_mapping_rejects_unknown_type(self) -> None:
+        raw = pd.DataFrame({"Unnamed: 0": [0], "R2": [0.1], "type": [6]})
+        with self.assertRaises(ValueError):
+            prepare_professor_binary(raw)
 
 
 if __name__ == "__main__":

@@ -58,6 +58,30 @@ def audit_frame(frame: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def prepare_professor_binary(frame: pd.DataFrame) -> pd.DataFrame:
+    """Map the instructor's six process flags to the binary project target.
+
+    Keep all physics measurements and all rows. The exported pandas row number
+    and six-way truth flag are not model features.
+    """
+    if "type" not in frame.columns or "Unnamed: 0" not in frame.columns:
+        raise KeyError("Expected professor CSV columns 'type' and 'Unnamed: 0'")
+    if "target" in frame.columns or "split" in frame.columns:
+        raise ValueError("Source already contains a target or split assignment")
+    if frame["type"].isna().any() or not frame["type"].isin(range(6)).all():
+        raise ValueError("Process flags must be complete and in 0, 1, 2, 3, 4, 5")
+
+    # The original six-way truth remains in the immutable raw_events table.
+    result = frame.drop(columns=["Unnamed: 0", "type"]).copy()
+    if result.isna().any().any():
+        raise ValueError("Missing feature values require an explicit cleaning decision")
+    numeric = result.select_dtypes(include=np.number)
+    if numeric.shape[1] != result.shape[1] or not np.isfinite(numeric.to_numpy()).all():
+        raise ValueError("Features must be numeric and finite before split assignment")
+    result["target"] = frame["type"].isin((0, 1)).astype("int8")
+    return result
+
+
 def assign_split(
     frame: pd.DataFrame,
     label_column: str,
