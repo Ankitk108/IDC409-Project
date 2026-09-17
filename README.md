@@ -6,9 +6,10 @@ using event-level and event-shape features.
 ## Status
 
 The instructor's private CSV is the primary dataset. Ingestion, training-only
-EDA, and provisional validation for Logistic Regression and Decision Tree are
-implemented. Shared baselines, the other four agreed models, feature reduction,
-and final test evaluation remain team work.
+EDA, training-defined baselines, and provisional validation for Logistic
+Regression, Decision Tree, Linear SVM, and histogram Gradient Boosting BDT are
+implemented. MLP/CNN, feature reduction, and final test evaluation remain team
+work.
 
 ## Planned classifiers
 

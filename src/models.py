@@ -2,9 +2,11 @@
 
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
 from .config import RANDOM_STATE
@@ -23,6 +25,28 @@ def ankit_models() -> dict[str, object]:
         ]),
         "Decision Tree": DecisionTreeClassifier(
             max_depth=5, min_samples_leaf=100, random_state=RANDOM_STATE
+        ),
+    }
+
+
+def vishruti_models() -> dict[str, object]:
+    """Return scalable initial configurations for Vishruti's two models."""
+    return {
+        "Linear SVM": Pipeline([
+            ("scaler", StandardScaler()),
+            ("classifier", LinearSVC(
+                C=1.0, dual="auto", max_iter=10_000,
+                random_state=RANDOM_STATE,
+            )),
+        ]),
+        "Histogram Gradient Boosting BDT": HistGradientBoostingClassifier(
+            learning_rate=0.05,
+            max_iter=200,
+            max_leaf_nodes=31,
+            min_samples_leaf=50,
+            l2_regularization=0.1,
+            early_stopping=False,
+            random_state=RANDOM_STATE,
         ),
     }
 
@@ -58,5 +82,43 @@ def fit_ankit_validation(
             "validation_rows": len(validation),
             "features": len(features),
             **binary_metrics(y_validation, prediction, signal_probability),
+        })
+    return models, pd.DataFrame.from_records(records)
+
+
+def fit_vishruti_validation(
+    events: pd.DataFrame,
+) -> tuple[dict[str, object], pd.DataFrame]:
+    """Fit Vishruti's models on train and score validation, never test."""
+    train = training_events(events)
+    validation = events.loc[events["split"] == "validation"].copy()
+    if validation.empty or set(validation["target"].unique()) != {0, 1}:
+        raise ValueError("Validation split must contain both binary classes")
+    if {"type", "Unnamed: 0"} & set(events.columns):
+        raise ValueError("Original truth and exported row number cannot be model inputs")
+
+    features = feature_columns(train)
+    x_train, y_train = train[features], train["target"]
+    x_validation, y_validation = validation[features], validation["target"]
+    if not np.isfinite(x_validation.to_numpy()).all():
+        raise ValueError("Validation features must be finite")
+
+    models = vishruti_models()
+    records = []
+    for name, model in models.items():
+        model.fit(x_train, y_train)
+        prediction = model.predict(x_validation)
+        if hasattr(model, "predict_proba"):
+            signal_score = model.predict_proba(x_validation)[:, 1]
+        else:
+            signal_score = model.decision_function(x_validation)
+        records.append({
+            "model": name,
+            "feature_set": "full",
+            "split": "validation",
+            "train_rows": len(train),
+            "validation_rows": len(validation),
+            "features": len(features),
+            **binary_metrics(y_validation, prediction, signal_score),
         })
     return models, pd.DataFrame.from_records(records)
