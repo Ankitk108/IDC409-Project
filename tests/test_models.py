@@ -4,7 +4,9 @@ import unittest
 
 import pandas as pd
 
-from src.models import fit_ankit_validation, fit_vishruti_validation
+from src.models import (
+    fit_ankit_validation, fit_koustav_mlp_validation, fit_vishruti_validation,
+)
 
 
 class AnkitModelTests(unittest.TestCase):
@@ -70,6 +72,22 @@ class VishrutiModelTests(unittest.TestCase):
         changed.loc[changed["split"] == "test", "target"] = 0
         _, repeated = fit_vishruti_validation(changed)
         pd.testing.assert_frame_equal(original, repeated)
+
+
+class KoustavMLPTests(unittest.TestCase):
+    def test_reduced_mlp_reports_only_validation(self):
+        labels = [0, 1] * 200
+        events = pd.DataFrame({
+            "R2": [0.8 if y == 0 else 0.2 for y in labels],
+            "thrust": [0.9 if y == 0 else 0.5 for y in labels],
+            "target": labels,
+            "split": ["train"] * 320 + ["validation"] * 40 + ["test"] * 40,
+        })
+        _, result = fit_koustav_mlp_validation(events, ["R2"])
+        self.assertEqual(result.loc[0, "model"], "MLP")
+        self.assertEqual(result.loc[0, "feature_set"], "reduced_rfe20")
+        self.assertEqual(result.loc[0, "split"], "validation")
+        self.assertEqual(result.loc[0, "features"], 1)
 
 
 if __name__ == "__main__":
