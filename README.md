@@ -10,8 +10,7 @@ EDA, training-defined baselines, and provisional validation for Logistic
 Regression, Decision Tree, Linear SVM, and histogram Gradient Boosting BDT are
 implemented. Training-only correlation analysis, PCA, tree importance, RFE,
 full/reduced MLP validation, and an optional physics-grouped CNN are implemented
-for the next contribution. The protocol must be frozen before final test
-evaluation.
+and the frozen protocol has been evaluated once on held-out test data.
 
 ## Planned classifiers
 
@@ -71,8 +70,8 @@ The frozen protocol was evaluated once on 10,591 test events after refitting on
 | Histogram Gradient Boosting BDT | 59 | 0.8784 | 0.8815 | **0.9457** |
 | MLP (full) | 59 | 0.8740 | 0.8783 | 0.9416 |
 | MLP (RFE-20) | 20 | 0.8722 | 0.8772 | 0.9399 |
-| Physics-grouped 1D CNN | 59 | 0.8534 | 0.8577 | 0.9270 |
-| Logistic Regression | 59 | 0.8424 | 0.8475 | 0.9152 |
+| Physics-grouped 1D CNN | 59 | 0.8540 | 0.8584 | 0.9273 |
+| Logistic Regression | 59 | 0.8420 | 0.8471 | 0.9151 |
 | Linear SVM | 59 | 0.8420 | 0.8480 | 0.9151 |
 | Decision Tree | 59 | 0.8297 | 0.8366 | 0.9022 |
 
