@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
@@ -49,6 +50,26 @@ def vishruti_models() -> dict[str, object]:
             random_state=RANDOM_STATE,
         ),
     }
+
+
+def koustav_mlp() -> Pipeline:
+    """Return Koustav's initial scaled feed-forward neural network."""
+    return Pipeline([
+        ("scaler", StandardScaler()),
+        ("classifier", MLPClassifier(
+            hidden_layer_sizes=(64, 32),
+            activation="relu",
+            solver="adam",
+            alpha=1e-4,
+            batch_size=256,
+            learning_rate_init=1e-3,
+            max_iter=200,
+            early_stopping=True,
+            validation_fraction=0.1,
+            n_iter_no_change=12,
+            random_state=RANDOM_STATE,
+        )),
+    ])
 
 
 def fit_ankit_validation(
@@ -122,3 +143,34 @@ def fit_vishruti_validation(
             **binary_metrics(y_validation, prediction, signal_score),
         })
     return models, pd.DataFrame.from_records(records)
+
+
+def fit_koustav_mlp_validation(
+    events: pd.DataFrame,
+    selected_features: tuple[str, ...] | list[str] | None = None,
+) -> tuple[Pipeline, pd.DataFrame]:
+    """Fit MLP on full or frozen reduced training features and score validation."""
+    train = training_events(events)
+    validation = events.loc[events["split"] == "validation"].copy()
+    if validation.empty or set(validation["target"].unique()) != {0, 1}:
+        raise ValueError("Validation split must contain both binary classes")
+    available = feature_columns(train)
+    features = available if selected_features is None else list(selected_features)
+    if not features or not set(features) <= set(available):
+        raise ValueError("Selected features must be non-empty prepared physics columns")
+
+    model = koustav_mlp()
+    model.fit(train[features], train["target"])
+    prediction = model.predict(validation[features])
+    signal_score = model.predict_proba(validation[features])[:, 1]
+    feature_set = "full" if selected_features is None else "reduced_rfe20"
+    result = pd.DataFrame([{
+        "model": "MLP",
+        "feature_set": feature_set,
+        "split": "validation",
+        "train_rows": len(train),
+        "validation_rows": len(validation),
+        "features": len(features),
+        **binary_metrics(validation["target"], prediction, signal_score),
+    }])
+    return model, result

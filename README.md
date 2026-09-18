@@ -8,8 +8,9 @@ using event-level and event-shape features.
 The instructor's private CSV is the primary dataset. Ingestion, training-only
 EDA, training-defined baselines, and provisional validation for Logistic
 Regression, Decision Tree, Linear SVM, and histogram Gradient Boosting BDT are
-implemented. MLP/CNN, feature reduction, and final test evaluation remain team
-work.
+implemented. Training-only correlation analysis, PCA, tree importance, RFE,
+full/reduced MLP validation, and an optional physics-grouped CNN are implemented
+and the frozen protocol has been evaluated once on held-out test data.
 
 ## Planned classifiers
 
@@ -25,6 +26,61 @@ are deliberately excluded from Git.
 
 Every model uses the same persisted, label-stratified 70/15/15 assignment: training
 for fitting, validation for tuning and selection, and test for final evaluation only.
+
+Install the core environment with:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+The CNN requires the larger optional PyTorch dependency. Install it separately
+only when running that model:
+
+```powershell
+python -m pip install -r requirements-cnn.txt
+```
+
+Without PyTorch, the notebook reports that the CNN was skipped and continues with
+all core stages. The CNN uses convolutions only for ordered CLEO-cone and KSFW
+moment families; it does not treat arbitrary table-column order as spatial data.
+
+## Frozen final evaluation
+
+After validation choices are frozen, the held-out test is evaluated through one
+guarded command:
+
+```powershell
+python -m scripts.run_final_evaluation
+```
+
+The command refits the frozen trainable configurations on combined training and
+validation rows, writes the final metrics and RFE-20 feature list under
+`results/tables/`, and writes ROC/confusion-matrix figures under
+`results/figures/`. It refuses to overwrite existing final artifacts. Ordinary
+notebook execution only displays those saved files and therefore does not reopen
+test repeatedly.
+
+## Final held-out results
+
+The frozen protocol was evaluated once on 10,591 test events after refitting on
+60,015 combined training and validation events.
+
+| Model | Features | Accuracy | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|
+| Histogram Gradient Boosting BDT | 59 | 0.8784 | 0.8815 | **0.9457** |
+| MLP (full) | 59 | 0.8740 | 0.8783 | 0.9416 |
+| MLP (RFE-20) | 20 | 0.8722 | 0.8772 | 0.9399 |
+| Physics-grouped 1D CNN | 59 | 0.8540 | 0.8584 | 0.9273 |
+| Logistic Regression | 59 | 0.8420 | 0.8471 | 0.9151 |
+| Linear SVM | 59 | 0.8420 | 0.8480 | 0.9151 |
+| Decision Tree | 59 | 0.8297 | 0.8366 | 0.9022 |
+
+The BDT is the strongest tested model. RFE reduces the MLP input from 59 to 20
+measured features while losing only 0.0017 ROC-AUC, supporting comparable—not
+improved—reduced-feature performance. The CNN is a valid experimental sixth
+family but does not outperform the BDT or either MLP. These conclusions apply to
+one fixed split of the instructor-provided simulated dataset; they are not claims
+of detector-data or cross-dataset generalization.
 
 ## Data source
 
