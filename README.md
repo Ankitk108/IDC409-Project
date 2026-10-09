@@ -124,6 +124,26 @@ F1 0.8726, and ROC-AUC 0.9419. Removing 39 measurements therefore costs about
 a measured simplicity/performance trade-off, not evidence that reduction improves
 the BDT.
 
+A final neural-capacity extension uses the frozen RFE-20 measurements in a deeper
+PyTorch dense network: `20 → 128 → 64 → 1`, with LayerNorm, ReLU, dropout,
+AdamW, and fold-internal early stopping. It produces five-fold development-only
+OOF predictions and never reads original test rows:
+
+```powershell
+python -m scripts.run_deep_dense_extension
+```
+
+Install `requirements-cnn.txt` for the optional PyTorch dependency. The guarded
+runner writes separate `posthoc_dense_*` artifacts; results remain exploratory
+and outside the frozen test ranking.
+
+The completed dense network reaches accuracy 0.8725, precision 0.8549, recall
+0.9012, F1 0.8774, and ROC-AUC 0.9432 across 60,015 OOF predictions. Its high
+recall comes with 4,650 false-positive backgrounds and 3,004 missed signals.
+The selected fold epochs `(44, 58, 59, 60, 56)` average 55.4; because two folds
+approach the fixed 60-epoch ceiling, incomplete convergence is a limitation, not
+a reason to retune after inspecting the result.
+
 ## Data source
 
 Place the instructor-provided `data_hep - data_hep.csv` in `data/raw/` without
