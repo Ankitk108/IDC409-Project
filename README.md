@@ -103,6 +103,27 @@ features: accuracy 0.8595, precision 0.8513, recall 0.8756, F1 0.8633, and ROC-A
 0.9332. It demonstrates useful separation with the reduced feature set, but it is
 not evidence that Random Forest outranks a model measured on the frozen test set.
 
+The strongest frozen-test family is also studied under a matched post-hoc
+feature-reduction protocol. This runner evaluates the unchanged histogram BDT
+on all 59 measurements and the frozen RFE-20 subset using identical five-fold
+development-only out-of-fold predictions:
+
+```powershell
+python -m scripts.run_reduced_bdt_comparison
+```
+
+It writes `posthoc_bdt_feature_comparison_cv.csv` and
+`posthoc_bdt_feature_comparison.png`. The original test rows remain excluded;
+therefore these results measure the development-CV effect of reducing BDT inputs
+and do not replace or extend the frozen test ranking.
+
+Across 60,015 matched out-of-fold predictions, the full BDT reaches accuracy
+0.8773, F1 0.8804, and ROC-AUC 0.9481; the RFE-20 BDT reaches accuracy 0.8690,
+F1 0.8726, and ROC-AUC 0.9419. Removing 39 measurements therefore costs about
+0.0083 accuracy and 0.0062 ROC-AUC while retaining most discrimination. This is
+a measured simplicity/performance trade-off, not evidence that reduction improves
+the BDT.
+
 ## Data source
 
 Place the instructor-provided `data_hep - data_hep.csv` in `data/raw/` without

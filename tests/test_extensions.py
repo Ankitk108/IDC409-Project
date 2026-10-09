@@ -2,11 +2,15 @@
 
 import unittest
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from src.extensions import (
+    evaluate_reduced_bdt_comparison_cv,
     evaluate_reduced_random_forest_cv,
+    plot_reduced_bdt_comparison,
     plot_reduced_random_forest_diagnostics,
 )
 
@@ -46,6 +50,33 @@ class ReducedRandomForestTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate_reduced_random_forest_cv(
                 self.events, ["type"], fold_count=2, n_estimators=5
+            )
+
+    def test_bdt_comparison_ignores_test_and_matches_feature_sets(self):
+        original = evaluate_reduced_bdt_comparison_cv(
+            self.events, ["R2"], fold_count=2
+        )
+        changed = self.events.copy()
+        changed.loc[changed["split"] == "test", ["R2", "target"]] = [999, 0]
+        repeated = evaluate_reduced_bdt_comparison_cv(
+            changed, ["R2"], fold_count=2
+        )
+        pd.testing.assert_frame_equal(original.metrics, repeated.metrics)
+        self.assertEqual(original.metrics["features"].tolist(), [2, 1])
+        self.assertEqual(original.metrics["rows"].tolist(), [100, 100])
+
+    def test_bdt_comparison_plot_contains_roc_and_two_matrices(self):
+        result = evaluate_reduced_bdt_comparison_cv(
+            self.events, ["R2"], fold_count=2
+        )
+        figure = plot_reduced_bdt_comparison(result)
+        self.assertEqual(len(figure.axes), 3)
+        plt.close(figure)
+
+    def test_bdt_comparison_rejects_duplicate_reduced_features(self):
+        with self.assertRaises(ValueError):
+            evaluate_reduced_bdt_comparison_cv(
+                self.events, ["R2", "R2"], fold_count=2
             )
 
 
