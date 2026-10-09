@@ -1,0 +1,2 @@
+model,feature_set,evaluation,rows,features,mean_fitted_epochs,accuracy,precision,recall,f1,roc_auc
+"Deep Dense NN (RFE-20, post-hoc)",reduced_rfe20,development_5fold_oof,60015,20,55.4,0.8724652170290761,0.854896086875117,0.9011842105263158,0.8774300996060597,0.9431966086709259
