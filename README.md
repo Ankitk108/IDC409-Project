@@ -82,6 +82,27 @@ family but does not outperform the BDT or either MLP. These conclusions apply to
 one fixed split of the instructor-provided simulated dataset; they are not claims
 of detector-data or cross-dataset generalization.
 
+## Post-hoc extensions
+
+The additional model is deliberately separated from the frozen held-out
+comparison. The extension runner evaluates one binary Random Forest on the frozen
+RFE-20 feature set using five-fold out-of-fold predictions on the original
+train+validation rows only. Original test rows are excluded.
+
+```powershell
+python -m scripts.run_posthoc_extensions
+```
+
+The runner reports the five binary metrics plus an out-of-fold ROC curve and
+confusion matrix. Outputs use `posthoc_*` filenames under `results/tables/` and
+`results/figures/`; they must not be inserted into the frozen test ranking because
+the evaluation protocol differs.
+
+The completed development-only result uses 60,015 out-of-fold predictions and 20
+features: accuracy 0.8595, precision 0.8513, recall 0.8756, F1 0.8633, and ROC-AUC
+0.9332. It demonstrates useful separation with the reduced feature set, but it is
+not evidence that Random Forest outranks a model measured on the frozen test set.
+
 ## Data source
 
 Place the instructor-provided `data_hep - data_hep.csv` in `data/raw/` without

@@ -1,0 +1,2 @@
+model,feature_set,evaluation,rows,features,accuracy,precision,recall,f1,roc_auc
+"Random Forest (RFE-20, post-hoc)",reduced_rfe20,development_5fold_oof,60015,20,0.8594851287178206,0.851258434871598,0.8755921052631579,0.8632538228283254,0.9332115992962314
