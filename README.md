@@ -144,6 +144,30 @@ The selected fold epochs `(44, 58, 59, 60, 56)` average 55.4; because two folds
 approach the fixed 60-epoch ceiling, incomplete convergence is a limitation, not
 a reason to retune after inspecting the result.
 
+## Seed robustness of the representative best models
+
+The final development-only robustness study compares the full BDT and deep dense
+RFE-20 network across ten complete five-fold OOF repetitions. The fixed seeds are
+42, 123, 2026, 7, 19, 73, 314, 2718, 4096, and 10007. Both fold construction and
+estimator/training randomness vary; original test rows remain excluded.
+
+```powershell
+python -m scripts.run_seed_robustness
+```
+
+The guarded runner performs 100 total fits and stores every seed-level result, an
+across-seed mean/sample-standard-deviation/minimum/maximum table, and a diagnostic
+figure. It requires optional PyTorch dependencies and is intentionally separate
+from the frozen test ranking. Progress is checkpointed after each model-seed result
+under ignored `data/interim/`, so rerunning the same command resumes missing work.
+
+Across ten complete OOF repetitions, the full BDT reaches ROC-AUC
+`0.948093 ± 0.000194` and F1 `0.879696 ± 0.000522`. The deep dense RFE-20 network
+reaches ROC-AUC `0.943377 ± 0.000460` and F1 `0.876410 ± 0.000911`. The narrow
+ranges preserve the same ordering in every seed: the full BDT is the stronger and
+more stable model, while the 20-feature dense network remains close with fewer
+inputs.
+
 ## Data source
 
 Place the instructor-provided `data_hep - data_hep.csv` in `data/raw/` without
