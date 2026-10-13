@@ -33,6 +33,7 @@ def evaluate_deep_dense_cv(
     max_epochs: int = 60,
     patience: int = 8,
     batch_size: int = 256,
+    random_state: int = RANDOM_STATE,
 ) -> DeepDenseResult:
     """Create fixed OOF predictions with inner-fold early stopping."""
     try:
@@ -83,7 +84,7 @@ def evaluate_deep_dense_cv(
     scores = np.empty(len(development), dtype=np.float64)
     fitted_epochs = []
     outer_folds = StratifiedKFold(
-        n_splits=fold_count, shuffle=True, random_state=RANDOM_STATE
+        n_splits=fold_count, shuffle=True, random_state=random_state
     )
     for fold_number, (outer_train, outer_holdout) in enumerate(
         outer_folds.split(inputs, truth), start=1
@@ -91,7 +92,7 @@ def evaluate_deep_dense_cv(
         inner_train, inner_stop = train_test_split(
             outer_train,
             test_size=0.10,
-            random_state=RANDOM_STATE + fold_number,
+            random_state=random_state + fold_number,
             stratify=truth[outer_train],
         )
         scaler = StandardScaler().fit(inputs[inner_train])
@@ -107,7 +108,7 @@ def evaluate_deep_dense_cv(
         train_y = torch.tensor(truth[inner_train], dtype=torch.float32)
         stop_y = torch.tensor(truth[inner_stop], dtype=torch.float32)
 
-        fold_seed = RANDOM_STATE + fold_number
+        fold_seed = random_state + fold_number
         torch.manual_seed(fold_seed)
         generator = torch.Generator().manual_seed(fold_seed)
         model = DenseClassifier()
