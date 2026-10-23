@@ -168,6 +168,29 @@ ranges preserve the same ordering in every seed: the full BDT is the stronger an
 more stable model, while the 20-feature dense network remains close with fewer
 inputs.
 
+## Linear Discriminant Analysis study
+
+Study D adds a transparent linear baseline beyond Logistic Regression by fitting
+shrinkage Linear Discriminant Analysis on all 59 measurements and the frozen
+RFE-20 subset. Scaling and covariance estimation occur inside each fold. Both
+variants use the same ten-seed, five-fold development-only OOF protocol; original
+test rows remain excluded.
+
+```powershell
+python -m scripts.run_lda_study
+```
+
+The guarded runner writes seed-level and across-seed metric tables, ROC/confusion
+diagnostics, and signal/background distributions along the single discriminant
+axis available in a binary LDA problem.
+
+Across ten seeds, full LDA reaches ROC-AUC `0.899909 ± 0.000061`, while RFE-20
+LDA reaches `0.894893 ± 0.000090`. Full LDA ranks events better overall. RFE-20
+uses a more signal-efficient operating point—recall `0.874056` versus `0.829237`—
+so its F1 is higher (`0.829851` versus `0.824490`) despite lower accuracy,
+precision, and ROC-AUC. This threshold trade-off does not make reduced LDA the
+stronger ranker.
+
 ## Data source
 
 Place the instructor-provided `data_hep - data_hep.csv` in `data/raw/` without
