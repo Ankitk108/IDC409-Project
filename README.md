@@ -164,9 +164,10 @@ under ignored `data/interim/`, so rerunning the same command resumes missing wor
 Across ten complete OOF repetitions, the full BDT reaches ROC-AUC
 `0.948093 ± 0.000194` and F1 `0.879696 ± 0.000522`. The deep dense RFE-20 network
 reaches ROC-AUC `0.943377 ± 0.000460` and F1 `0.876410 ± 0.000911`. The narrow
-ranges preserve the same ordering in every seed: the full BDT is the stronger and
-more stable model, while the 20-feature dense network remains close with fewer
-inputs.
+ranges describe sensitivity to these ten fold/training seeds on the same finite
+dataset. They are not confidence intervals or estimates of future-data uncertainty.
+The ordering is unchanged across these runs, but that alone does not establish a
+population-level difference.
 
 ## Linear Discriminant Analysis study
 
@@ -190,6 +191,34 @@ uses a more signal-efficient operating point—recall `0.874056` versus `0.82923
 so its F1 is higher (`0.829851` versus `0.824490`) despite lower accuracy,
 precision, and ROC-AUC. This threshold trade-off does not make reduced LDA the
 stronger ranker.
+
+## Methodology-correction study
+
+Study E preserves the earlier artifacts but corrects their inferential limits.
+The first stage reconstructs the fixed Study-A predictions only to calculate
+paired stratified-bootstrap ROC-AUC intervals, AUC-difference intervals, signal
+efficiency versus background rejection, a log-scale ROC, and acceptance broken
+down by the original six generator processes. It does not select a new model or
+threshold using the test set.
+
+```powershell
+python -m scripts.run_methodology_correction --stage audit
+```
+
+The longer second stage excludes original test rows. It uses nested outer/inner
+cross-validation, four candidate settings per classical family, fold-local BDT
+permutation selection, and fold-local PCA retaining 95% variance. This replaces
+the earlier fixed-RFE comparison as the end-to-end evidence about reduction.
+
+```powershell
+python -m scripts.run_methodology_correction --stage nested
+```
+
+Accuracy, precision, recall, and F1 remain course deliverables, but they reflect
+the supplied nearly balanced sample. The source contains no validated luminosity
+or event-weight column, so the project does not invent a physical class prior or
+claim luminosity-weighted significance. The public notebook reads the Study-E
+CSV artifacts and generates its numerical findings from them.
 
 ## Data source
 

@@ -1,0 +1,31 @@
+fold,model,feature_set,candidate_count,best_inner_roc_auc,best_parameters,pca_components
+1,Logistic Regression,full,4,0.9175895849154477,"{""model__C"": 1.0}",
+1,Decision Tree,full,4,0.9105244820444,"{""max_depth"": 8, ""min_samples_leaf"": 50}",
+1,Linear SVM,full,4,0.917783208714083,"{""model__C"": 1.0}",
+1,Histogram Gradient Boosting BDT,full,4,0.946563806081172,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+1,Histogram Gradient Boosting BDT,nested_permutation_20,4,0.9456320921321337,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+1,Histogram Gradient Boosting BDT,nested_pca95,4,0.9184866088292306,"{""model__max_leaf_nodes"": 31, ""model__min_samples_leaf"": 70}",23
+2,Logistic Regression,full,4,0.9188279528775287,"{""model__C"": 1.0}",
+2,Decision Tree,full,4,0.9118993773397337,"{""max_depth"": 8, ""min_samples_leaf"": 50}",
+2,Linear SVM,full,4,0.918674638821157,"{""model__C"": 1.0}",
+2,Histogram Gradient Boosting BDT,full,4,0.9469882116960008,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 30}",
+2,Histogram Gradient Boosting BDT,nested_permutation_20,4,0.9472236651014727,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+2,Histogram Gradient Boosting BDT,nested_pca95,4,0.9197201187163584,"{""model__max_leaf_nodes"": 31, ""model__min_samples_leaf"": 70}",22
+3,Logistic Regression,full,4,0.9189024057829401,"{""model__C"": 1.0}",
+3,Decision Tree,full,4,0.9101389380896366,"{""max_depth"": 8, ""min_samples_leaf"": 50}",
+3,Linear SVM,full,4,0.9187419741107411,"{""model__C"": 1.0}",
+3,Histogram Gradient Boosting BDT,full,4,0.946388985791319,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+3,Histogram Gradient Boosting BDT,nested_permutation_20,4,0.9469328745299194,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+3,Histogram Gradient Boosting BDT,nested_pca95,4,0.919929270412644,"{""model__max_leaf_nodes"": 31, ""model__min_samples_leaf"": 70}",21
+4,Logistic Regression,full,4,0.9185749749729727,"{""model__C"": 1.0}",
+4,Decision Tree,full,4,0.9121413938746114,"{""max_depth"": 8, ""min_samples_leaf"": 50}",
+4,Linear SVM,full,4,0.9186012368641107,"{""model__C"": 1.0}",
+4,Histogram Gradient Boosting BDT,full,4,0.9471053883098547,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+4,Histogram Gradient Boosting BDT,nested_permutation_20,4,0.9467484749888917,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+4,Histogram Gradient Boosting BDT,nested_pca95,4,0.9201424812284761,"{""model__max_leaf_nodes"": 31, ""model__min_samples_leaf"": 70}",22
+5,Logistic Regression,full,4,0.9178584103900959,"{""model__C"": 1.0}",
+5,Decision Tree,full,4,0.9101011358021527,"{""max_depth"": 8, ""min_samples_leaf"": 50}",
+5,Linear SVM,full,4,0.9179942405378044,"{""model__C"": 1.0}",
+5,Histogram Gradient Boosting BDT,full,4,0.9468393117955669,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+5,Histogram Gradient Boosting BDT,nested_permutation_20,4,0.9462697702703663,"{""max_leaf_nodes"": 31, ""min_samples_leaf"": 70}",
+5,Histogram Gradient Boosting BDT,nested_pca95,4,0.9187886231011967,"{""model__max_leaf_nodes"": 31, ""model__min_samples_leaf"": 70}",22
