@@ -1,0 +1,5 @@
+model,type,process,signal_rows,background_rows,roc_auc
+Histogram Gradient Boosting BDT,2,ccbar,5365,3492,0.9469297950634604
+Histogram Gradient Boosting BDT,3,uubar,5365,1243,0.9429786487461191
+Histogram Gradient Boosting BDT,4,ddbar,5365,260,0.9448110975697182
+Histogram Gradient Boosting BDT,5,ssbar,5365,231,0.9422551974276112
