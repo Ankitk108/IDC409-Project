@@ -26,6 +26,8 @@ class EDATests(unittest.TestCase):
         rank = feature_separation(training_events(self.events))
         self.assertEqual(set(rank["feature"]), {"R2", "thrust"})
         self.assertTrue((rank["separation_auc"] == 1).all())
+        self.assertTrue((rank["higher_for_signal"] == 0).all())
+        self.assertTrue((rank["ks_statistic"] == 1).all())
         self.assertAlmostEqual(
             rank.loc[rank["feature"] == "R2", "signal_median"].item(), 0.15
         )
