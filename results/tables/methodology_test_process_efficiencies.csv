@@ -1,12 +1,12 @@
 model,target_signal_efficiency,type,process,rows,signal_acceptance
 Histogram Gradient Boosting BDT,0.9,0,charged_BB,80,0.85
-Histogram Gradient Boosting BDT,0.9,1,neutral_BB,5285,0.9008514664143803
+Histogram Gradient Boosting BDT,0.9,1,neutral_BB,5285,0.9006622516556292
 Histogram Gradient Boosting BDT,0.9,2,ccbar,3492,0.14232531500572737
 Histogram Gradient Boosting BDT,0.9,3,uubar,1243,0.1504424778761062
 Histogram Gradient Boosting BDT,0.9,4,ddbar,260,0.1423076923076923
 Histogram Gradient Boosting BDT,0.9,5,ssbar,231,0.15151515151515152
 Histogram Gradient Boosting BDT,0.95,0,charged_BB,80,0.9375
-Histogram Gradient Boosting BDT,0.95,1,neutral_BB,5285,0.9508041627246925
+Histogram Gradient Boosting BDT,0.95,1,neutral_BB,5285,0.9502365184484389
 Histogram Gradient Boosting BDT,0.95,2,ccbar,3492,0.23883161512027493
 Histogram Gradient Boosting BDT,0.95,3,uubar,1243,0.23491552695092519
 Histogram Gradient Boosting BDT,0.95,4,ddbar,260,0.2423076923076923

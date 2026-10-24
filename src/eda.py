@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy.cluster.hierarchy import leaves_list, linkage
+from scipy.spatial.distance import squareform
+from scipy.stats import ks_2samp
 from sklearn.metrics import roc_auc_score
 
 
@@ -41,12 +44,18 @@ def feature_separation(train: pd.DataFrame) -> pd.DataFrame:
     signal = train["target"] == 1
     for feature in feature_columns(train):
         auc = float(roc_auc_score(train["target"], train[feature]))
+        ks = ks_2samp(
+            train.loc[signal, feature], train.loc[~signal, feature],
+            alternative="two-sided", method="auto",
+        )
         rows.append({
             "feature": feature,
             "separation_auc": max(auc, 1 - auc),
             "higher_for_signal": int(auc >= 0.5),
             "signal_median": float(train.loc[signal, feature].median()),
             "background_median": float(train.loc[~signal, feature].median()),
+            "ks_statistic": float(ks.statistic),
+            "ks_pvalue": float(ks.pvalue),
         })
     return pd.DataFrame(rows).sort_values(
         "separation_auc", ascending=False, kind="stable"
@@ -87,8 +96,18 @@ def plot_feature_distributions(
 
 
 def plot_correlation_heatmap(correlations: pd.DataFrame) -> plt.Figure:
+    """Plot correlations after hierarchical ordering by absolute similarity."""
+    if correlations.shape[0] != correlations.shape[1] or correlations.empty:
+        raise ValueError("A non-empty square correlation matrix is required")
+    distance = (1 - correlations.abs()).clip(0, 1)
+    np.fill_diagonal(distance.values, 0)
+    order = leaves_list(linkage(squareform(distance, checks=False), method="average"))
+    ordered = correlations.iloc[order, order]
     fig, ax = plt.subplots(figsize=(15, 13))
-    sns.heatmap(correlations, cmap="coolwarm", center=0, vmin=-1, vmax=1, ax=ax)
-    ax.set_title("Training-feature Pearson correlations")
+    sns.heatmap(
+        ordered, cmap="coolwarm", center=0, vmin=-1, vmax=1, ax=ax,
+        xticklabels=False, yticklabels=False,
+    )
+    ax.set_title("Hierarchically ordered training-feature correlations")
     fig.tight_layout()
     return fig

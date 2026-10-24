@@ -192,33 +192,71 @@ so its F1 is higher (`0.829851` versus `0.824490`) despite lower accuracy,
 precision, and ROC-AUC. This threshold trade-off does not make reduced LDA the
 stronger ranker.
 
-## Methodology-correction study
+## Uncertainty, operating points, and nested reduction
 
-Study E preserves the earlier artifacts but corrects their inferential limits.
-The first stage reconstructs the fixed Study-A predictions only to calculate
-paired stratified-bootstrap ROC-AUC intervals, AUC-difference intervals, signal
-efficiency versus background rejection, a log-scale ROC, and acceptance broken
-down by the original six generator processes. It does not select a new model or
-threshold using the test set.
+The first stage reconstructs the historical fixed-test models only to calculate
+paired stratified-bootstrap ROC-AUC intervals, AUC-difference intervals, and
+interpolated operating points at exactly 90% and 95% signal efficiency. It reports
+background efficiency, rejected-background fraction, and inverse rejection factor
+with distinct names and bootstrap intervals. It also writes generator-process
+acceptance, process-versus-signal AUC, exact duplicate-feature columns, and feature
+zero fractions. ROC interpolation represents randomized operation between adjacent
+thresholds; the uninformative majority baseline has no headline rejection entry.
+The audit does not select a new model or threshold using the test set.
 
 ```powershell
 python -m scripts.run_methodology_correction --stage audit
 ```
 
 The longer second stage excludes original test rows. It uses nested outer/inner
-cross-validation, four candidate settings per classical family, fold-local BDT
-permutation selection, and fold-local PCA retaining 95% variance. This replaces
-the earlier fixed-RFE comparison as the end-to-end evidence about reduction.
+cross-validation, a limited four-candidate search per classical family, fold-local
+BDT permutation selection, and fold-local PCA retaining 95% variance. It reports
+mean and spread of fold-level AUC, avoiding pooled SVM decision-score scale effects,
+plus selection frequencies and pairwise Jaccard overlap. The four-candidate search
+does not equalize effort across untuned neural, Random Forest, CNN, or LDA models.
 
 ```powershell
 python -m scripts.run_methodology_correction --stage nested
 ```
 
-Accuracy, precision, recall, and F1 remain course deliverables, but they reflect
+A third stage adds a quantile-binned calibration curve on the recorded test split
+and a three-fold development learning curve for the representative BDT:
+
+```powershell
+python -m scripts.run_methodology_correction --stage diagnostics
+```
+
+Commit `20d0b84` is the first Git record containing the original final artifacts.
+It documents when those files entered the repository; it is not proof that the
+protocol was preregistered or that the test was opened only once. The grouped CNN
+is retained as a negative result: CLEO cones have a physical angular order, while
+the KSFW-moment order gives convolution only a weak inductive justification.
+
+The deeper dense network used an inner 10% early-stopping split within every outer
+training fold. Four of five selected epochs `(44, 58, 59, 60, 56)` are at or within
+four epochs of the 60-epoch cap, so its comparison with BDT is convergence-limited.
+The project uses scikit-learn histogram gradient boosting as a portable BDT-family
+benchmark; it does not claim to reproduce Belle II FastBDT.
+
+Accuracy, precision, recall, and F1 remain course deliverables and appendix metrics, but they reflect
 the supplied nearly balanced sample. The source contains no validated luminosity
 or event-weight column, so the project does not invent a physical class prior or
-claim luminosity-weighted significance. The public notebook reads the Study-E
-CSV artifacts and generates its numerical findings from them.
+claim luminosity-weighted significance. The public notebook reads committed CSV
+artifacts and generates its headline table, abstract result, and conclusion from them.
+
+The instructor sample has an anomalous generator composition: only 462 charged-B
+rows versus 35,303 neutral-B rows, and charm dominates the continuum subset. This
+does not resemble physical production fractions and needs instructor confirmation;
+the 80-row charged-B test acceptance is descriptive only. The file also lacks
+`deltaE` and `Mbc`, so fit-variable decorrelation/sculpting cannot be checked.
+Exact duplicate and zero-inflated features are disclosed rather than silently
+transformed; log and zero-indicator transforms require a future fold-safe study.
+The audit finds two exact duplicate pairs:
+`KSFWVariables__bohoo1__cmFS1__bc` duplicates `KSFWVariables__bohoo1__bc`, and
+`KSFWVariables__bohoo3__cmFS1__bc` duplicates `KSFWVariables__bohoo3__bc`.
+Sixteen measurements are selected in all five outer folds; pairwise Jaccard
+overlap for the complete 20-feature selections ranges from 0.739 to 0.905, so
+the report describes a stable core rather than one universally stable subset.
 
 ## Data source
 
