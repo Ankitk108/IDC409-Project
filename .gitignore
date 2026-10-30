@@ -3,6 +3,7 @@ data/interim/
 data/processed/
 data/continuum.db
 docs/
+/docs*.zip
 *.pkl
 *.joblib
 *.root

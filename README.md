@@ -267,23 +267,17 @@ modifying it. Its `type` flags 0 and 1 are B-pair signal (`target=1`); flags 2,
 SQLite database, and reuses one persisted train/validation/test split. Neither
 the CSV nor the database is committed.
 
-## Optional Belle II MDST preparation (separate from the primary notebook)
+## Presentation figures
 
-`scripts/generate_belle2_ntuple.py` requires a configured Belle II `basf2`
-environment and an MDST file for each invocation. If the separately acquired
-official example MDSTs are placed in `data/raw/`, run signal and continuum jobs
-separately:
+After placing the private instructor CSV at
+`data/raw/data_hep - data_hep.csv`, build the slide-ready evidence package with:
 
-```bash
-basf2 scripts/generate_belle2_ntuple.py -- --input data/raw/Bd2K0spi0_to_train.root --output data/interim/signal_example.root --label 1
-basf2 scripts/generate_belle2_ntuple.py -- --input data/raw/ccbar_sample_to_train.root --output data/interim/background_example.root --label 0
+```powershell
+python -m scripts.build_presentation_figures
 ```
 
-The script processes **one input MDST per call** and writes continuum-suppression
-measurements plus a constant binary `target` branch. Its feature schema includes
-`R2`, `thrustBm`, `thrustOm`, KSFW moments, and CLEO cones; it does **not** emit
-the professor CSV's `thrust` or `foxWolframR2` columns. It does not write
-`isNotContinuumEvent`, combine the two inputs, or feed the primary notebook
-automatically. Inspect the output schemas and candidate/event diversity before
-any separate study; do not concatenate these example rows with the professor
-CSV. Generated ROOT files are private and ignored by Git.
+The command does not fit or score models. It reads the reviewed result CSVs,
+uses the private CSV only for the R2/thrust distribution panel, and writes 13
+numbered central-slide figures plus supporting plots and a source manifest to
+`results/figures/presentation/`. It refuses to replace an existing package;
+pass `--force` only when intentionally rebuilding all presentation figures.
