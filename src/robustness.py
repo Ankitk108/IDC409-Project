@@ -115,12 +115,20 @@ def plot_seed_robustness(result: SeedRobustnessResult) -> plt.Figure:
     for axis, metric in zip(axes, ("roc_auc", "f1")):
         for model_name, group in result.per_seed.groupby("model", sort=False):
             short_name = "Full BDT" if "BDT" in model_name else "Deep dense RFE-20"
-            axis.plot(group["seed"].astype(str), group[metric], "o-", label=short_name)
+            color = "#16B8C8" if "BDT" in model_name else "#F28B43"
+            axis.plot(
+                group["seed"].astype(str),
+                group[metric],
+                color=color,
+                lw=2.5,
+                marker="o",
+                markersize=6,
+                label=short_name,
+            )
         axis.set_title(f"{metric.replace('_', ' ').upper()} by seed")
         axis.set_xlabel("Repeated-CV seed")
         axis.set_ylabel(metric.replace("_", " "))
-        axis.grid(alpha=0.25)
-    axes[0].legend()
-    fig.suptitle("Study C: development-only 5-fold OOF robustness")
+        axis.grid(color="#8795A1", alpha=0.20, linewidth=0.8)
+    axes[0].legend(frameon=False)
     fig.tight_layout()
     return fig

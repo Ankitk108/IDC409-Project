@@ -6,7 +6,8 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import ConfusionMatrixDisplay, roc_curve
+import seaborn as sns
+from sklearn.metrics import confusion_matrix, roc_curve
 
 from .cnn import fit_cnn_test
 from .eda import feature_columns
@@ -146,20 +147,29 @@ def plot_test_roc(result: FinalEvaluation) -> plt.Figure:
 
 
 def plot_selected_confusion_matrices(result: FinalEvaluation) -> plt.Figure:
-    """Plot predeclared final confusion matrices for BDT, reduced MLP, and CNN."""
-    selected = (
-        "Histogram Gradient Boosting BDT", "MLP (RFE-20)",
-        "Physics-grouped 1D CNN",
+    """Plot the primary BDT confusion matrix for slide and report use."""
+    name = "Histogram Gradient Boosting BDT"
+    if name not in result.predictions:
+        raise ValueError(f"Final selected prediction is missing: {name}")
+    matrix = confusion_matrix(result.y_test, result.predictions[name], labels=[0, 1])
+    fig, ax = plt.subplots(figsize=(5.4, 4.5))
+    cmap = sns.light_palette("#10243E", as_cmap=True)
+    sns.heatmap(
+        matrix,
+        annot=True,
+        fmt="d",
+        cmap=cmap,
+        cbar=False,
+        square=True,
+        linewidths=1.5,
+        linecolor="white",
+        xticklabels=["Background", "Signal"],
+        yticklabels=["Background", "Signal"],
+        annot_kws={"size": 16, "weight": "bold"},
+        ax=ax,
     )
-    missing = set(selected) - set(result.predictions)
-    if missing:
-        raise ValueError(f"Final selected predictions are missing: {sorted(missing)}")
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4))
-    for name, ax in zip(selected, axes):
-        ConfusionMatrixDisplay.from_predictions(
-            result.y_test, result.predictions[name], display_labels=["background", "signal"],
-            colorbar=False, ax=ax,
-        )
-        ax.set_title(name)
+    ax.set_xlabel("Predicted class", fontsize=12)
+    ax.set_ylabel("True class", fontsize=12)
+    ax.tick_params(axis="both", labelsize=11, rotation=0)
     fig.tight_layout()
     return fig

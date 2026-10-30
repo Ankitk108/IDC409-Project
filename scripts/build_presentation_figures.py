@@ -8,18 +8,22 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import sqlite3
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 import numpy as np
 import pandas as pd
+from scipy.cluster.hierarchy import leaves_list, linkage
+from scipy.spatial.distance import squareform
 
 
 ROOT = Path(__file__).resolve().parents[1]
 TABLES = ROOT / "results" / "tables"
 SOURCE_FIGURES = ROOT / "results" / "figures"
 DEFAULT_DATA = ROOT / "data" / "raw" / "data_hep - data_hep.csv"
+DEFAULT_DB = ROOT / "data" / "continuum.db"
 DEFAULT_OUTPUT = SOURCE_FIGURES / "presentation"
 
 NAVY = "#17324D"
@@ -36,6 +40,7 @@ TEXT = "#17212B"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
+    parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
         "--force", action="store_true", help="Replace the existing package."
@@ -204,27 +209,83 @@ def slide_03(output: Path) -> None:
     save(fig, output / "03_data_preparation.png")
 
 
-def slide_04(output: Path, data_path: Path) -> None:
+def slide_04(output: Path, data_path: Path, db_path: Path = DEFAULT_DB) -> None:
     if not data_path.exists():
         raise FileNotFoundError(f"Private instructor CSV is missing: {data_path}")
     data = pd.read_csv(data_path, usecols=["R2", "thrust", "type"])
     data["class"] = np.where(data["type"].isin([0, 1]), "Signal", "Continuum")
-    fig, axes = plt.subplots(1, 2, figsize=(13.333, 7.5), dpi=180)
-    fig.suptitle("Event-shape separation before multivariate modeling", fontsize=24,
-                 weight="bold", color=NAVY, y=0.97)
+    signal_color = "#16B8C8"
+    background_color = "#F28B43"
+    fig, axes = plt.subplots(
+        1, 2, figsize=(12.0, 5.4), dpi=180, constrained_layout=True,
+    )
+    fig.patch.set_facecolor("white")
     for ax, feature in zip(axes, ["R2", "thrust"]):
-        for label, color in [("Signal", GREEN), ("Continuum", ORANGE)]:
+        ax.set_facecolor("#FAFCFD")
+        for label, color in [
+            ("Signal", signal_color),
+            ("Continuum", background_color),
+        ]:
             values = data.loc[data["class"] == label, feature]
-            ax.hist(values, bins=45, density=True, histtype="step", linewidth=2.2,
-                    label=label, color=color)
-        ax.set_xlabel(feature, fontsize=14)
-        ax.set_ylabel("Normalized density", fontsize=13)
-        ax.grid(alpha=0.2)
-        ax.legend(frameon=False)
-    fig.text(0.5, 0.03,
-             "R2-only test AUC 0.896210 [0.890198, 0.902247] • distributions overlap, motivating multivariate models",
-             ha="center", fontsize=12, color=TEXT)
-    save(fig, output / "04_eda_distributions.png")
+            ax.hist(
+                values, bins=45, density=True, histtype="stepfilled",
+                alpha=0.18, color=color,
+            )
+            ax.hist(
+                values, bins=45, density=True, histtype="step", linewidth=2.2,
+                label=label, color=color,
+            )
+        ax.set_xlabel(feature, fontsize=11)
+        ax.set_ylabel("Normalized density", fontsize=11)
+        ax.tick_params(labelsize=10, colors=TEXT)
+        ax.set_axisbelow(True)
+        ax.grid(color="#8795A1", alpha=0.20, linewidth=0.8)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.spines[["left", "bottom"]].set_color("#AAB4BD")
+        ax.legend(loc="upper right", frameon=False, fontsize=10)
+    fig.savefig(
+        output / "04_eda_distributions.png",
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close(fig)
+
+    if not db_path.exists():
+        raise FileNotFoundError(f"Canonical analysis database is missing: {db_path}")
+    with sqlite3.connect(db_path) as connection:
+        train = pd.read_sql_query(
+            "SELECT * FROM cleaned_events WHERE split = 'train'", connection,
+        )
+    feature_frame = train.drop(columns=["target", "split"])
+    correlations = feature_frame.corr()
+    distance = (1.0 - correlations.abs()).clip(0.0, 1.0)
+    np.fill_diagonal(distance.values, 0.0)
+    order = leaves_list(
+        linkage(squareform(distance, checks=False), method="average")
+    )
+    ordered = correlations.iloc[order, order]
+
+    fig, ax = plt.subplots(figsize=(6.4, 5.4), dpi=180, constrained_layout=True)
+    fig.patch.set_facecolor("white")
+    image = ax.imshow(ordered, cmap="RdBu_r", vmin=-1.0, vmax=1.0,
+                      interpolation="nearest", aspect="equal")
+    ax.set_xlabel("Clustered features", fontsize=11)
+    ax.set_ylabel("Clustered features", fontsize=11)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.03)
+    colorbar.set_label("Pearson correlation", fontsize=10)
+    colorbar.ax.tick_params(labelsize=9)
+    fig.savefig(
+        output / "04b_eda_correlations.png",
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close(fig)
 
 
 def slide_05(output: Path) -> None:
@@ -302,7 +363,7 @@ def slide_08(output: Path) -> None:
     bdt = exact_row(metrics, model="Histogram Gradient Boosting BDT")
     seed_auc = exact_row(seed, model="Histogram Gradient Boosting BDT (full)", metric="roc_auc")
     fig, axes = plt.subplots(1, 2, figsize=(13.333, 7.5), dpi=180)
-    fig.suptitle("Why the histogram BDT is the primary model", fontsize=24,
+    fig.suptitle("Histogram BDT test metrics and seed sensitivity", fontsize=24,
                  weight="bold", color=NAVY, y=0.98)
     labels = ["Accuracy", "Precision", "Recall", "F1", "ROC-AUC"]
     values = [bdt["accuracy"], bdt["precision"], bdt["recall"], bdt["f1"], bdt["roc_auc"]]
@@ -371,55 +432,38 @@ def slide_10(output: Path) -> None:
 
 def slide_11(output: Path) -> None:
     process = load_csv("methodology_test_process_auc.csv")
-    calibration = load_csv("methodology_bdt_calibration.csv")
-    learning = load_csv("methodology_bdt_learning_curve.csv")
-    fig, axes = plt.subplots(1, 3, figsize=(13.333, 7.5), dpi=180)
-    fig.suptitle("Process consistency, calibration, and data sufficiency",
-                 fontsize=22, weight="bold", color=NAVY, y=0.98)
-    axes[0].bar(process["process"], process["roc_auc"], color=GREEN)
-    axes[0].set_ylim(0.93, 0.952)
-    axes[0].set_ylabel("Test ROC-AUC")
-    axes[0].set_title("Continuum flavour", weight="bold")
+    fig, ax = plt.subplots(figsize=(7.0, 5.4), dpi=180, constrained_layout=True)
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    ax.bar(process["process"], process["roc_auc"], color="#16B8C8")
+    ax.set_ylim(0.93, 0.952)
+    ax.set_ylabel("Test ROC-AUC", fontsize=11)
+    ax.set_xlabel("Continuum process", fontsize=11)
     for i, row in process.reset_index(drop=True).iterrows():
-        axes[0].text(i, row["roc_auc"] + 0.0005,
-                     f"{row['roc_auc']:.6f}\nn={int(row['background_rows']):,}",
-                     ha="center", fontsize=8)
-    axes[1].plot([0, 1], [0, 1], linestyle="--", color="grey")
-    axes[1].plot(calibration["mean_predicted_probability"],
-                 calibration["observed_signal_fraction"], marker="o", color=BLUE)
-    axes[1].set_xlabel("Mean predicted probability")
-    axes[1].set_ylabel("Observed signal fraction")
-    axes[1].set_title("Calibration", weight="bold")
-    axes[2].errorbar(learning["training_rows"], learning["validation_roc_auc_mean"],
-                     yerr=learning["validation_roc_auc_std"], marker="o",
-                     capsize=4, color=ORANGE)
-    axes[2].set_xlabel("Training rows")
-    axes[2].set_ylabel("Validation ROC-AUC")
-    axes[2].set_title("Learning curve", weight="bold")
-    for ax in axes:
-        ax.grid(alpha=0.2)
-    fig.text(0.5, 0.025,
-             "Lowest calibration bin: predicted 0.009479, observed 0.002830 • ddbar/ssbar samples are small",
-             ha="center", fontsize=10.5, color=RED, weight="bold")
+        ax.text(i, row["roc_auc"] + 0.00045,
+                f"{row['roc_auc']:.3f}\nn={int(row['background_rows']):,}",
+                ha="center", fontsize=10, color=TEXT)
+    ax.grid(axis="y", color="#AAB4BD", alpha=0.20, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.spines[["top", "right"]].set_visible(False)
     save(fig, output / "11_process_and_diagnostics.png")
 
 
 def slide_12(output: Path) -> None:
-    fig, ax = new_figure("Recommendation and limitations")
-    box(ax, 0.04, 0.47, 0.285, 0.28, "Primary", "Full 59-feature histogram BDT\nStrongest fixed-test evidence", NAVY, 17, 13)
-    box(ax, 0.355, 0.47, 0.285, 0.28, "Compact alternative",
+    fig, ax = new_figure("Results summary")
+    box(ax, 0.04, 0.47, 0.285, 0.28, "Highest test AUC", "Full 59-feature histogram BDT\nTest AUC 0.946", NAVY, 17, 13)
+    box(ax, 0.355, 0.47, 0.285, 0.28, "Reduced representation",
         "Nested permutation-selected\n20-feature BDT\n39 fewer measurements",
         GREEN, 17, 11)
     box(ax, 0.67, 0.47, 0.285, 0.28, "Physics baseline", "R2 cut\nTest AUC 0.896210", ORANGE, 17, 13)
-    limitations = (
-        "Simulated and unweighted • non-physical process mixture • row-level split • "
-        "already-observed test • unequal tuning budgets • no delta E or Mbc • "
-        "deep dense model near epoch cap"
+    summary = (
+        "Completed scope: prepare the supplied data, train multiple model families, "
+        "and compare their performance on this simulated sample"
     )
-    ax.text(0.5, 0.25, limitations, ha="center", va="center", wrap=True,
-            fontsize=13, color=RED, weight="bold",
-            bbox={"facecolor": "#FFF5F4", "edgecolor": RED, "boxstyle": "round,pad=0.7"})
-    save(fig, output / "12_recommendation_and_limits.png")
+    ax.text(0.5, 0.25, summary, ha="center", va="center", wrap=True,
+            fontsize=13, color=TEXT, weight="bold",
+            bbox={"facecolor": LIGHT, "edgecolor": MID, "boxstyle": "round,pad=0.7"})
+    save(fig, output / "12_results_summary.png")
 
 
 def slide_13(output: Path, values: dict[str, float]) -> None:
@@ -432,7 +476,7 @@ def slide_13(output: Path, values: dict[str, float]) -> None:
     for index, (title, body, color) in enumerate(cards):
         box(ax, 0.05 + index * 0.315, 0.46, 0.285, 0.28, title, body, color, 16, 15)
     ax.text(0.5, 0.23,
-            "Next: independent event-grouped or collision-data validation → physical weights → data/MC checks → delta E and Mbc decorrelation",
+            "Scope: simulated, unweighted, row-split instructor data without delta E or Mbc variables",
             ha="center", va="center", wrap=True, fontsize=14, weight="bold", color=NAVY)
     save(fig, output / "13_conclusion.png")
 
@@ -461,6 +505,7 @@ def write_manifest(output: Path, supporting: list[str]) -> None:
         (2, "02_physics_topology.png", "Physics contract", "Conceptual diagram"),
         (3, "03_data_preparation.png", "Instructor dataset contract", "Data pipeline"),
         (4, "04_eda_distributions.png", "Private instructor CSV", "Normalized R2 and thrust distributions"),
+        (4, "04b_eda_correlations.png", "Training partition in canonical SQLite database", "Clustered feature correlations"),
         (5, "05_evaluation_protocols.png", "Methodology contract", "Protocol separation"),
         (6, "06_model_hypotheses.png", "Implemented model contracts", "Model-family map"),
         (7, "07_model_evidence.png", "Final, extension, and LDA result CSVs", "Protocol-separated results"),
@@ -468,7 +513,7 @@ def write_manifest(output: Path, supporting: list[str]) -> None:
         (9, "09_feature_representation.png", "Nested metrics and differences CSVs", "Nested representation study"),
         (10, "10_physics_operating_points.png", "Reviewed methodology ROC artifact", "Fixed-test operating curve"),
         (11, "11_process_and_diagnostics.png", "Process, calibration, and learning CSVs", "Diagnostics"),
-        (12, "12_recommendation_and_limits.png", "Reviewed project evidence", "Recommendation"),
+        (12, "12_results_summary.png", "Reviewed project evidence", "Results summary"),
         (13, "13_conclusion.png", "Headline evidence CSVs", "Conclusion"),
     ]
     manifest = pd.DataFrame(rows, columns=["slide", "file", "source", "purpose"])
@@ -480,12 +525,13 @@ def main() -> None:
     args = parse_args()
     output = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
     data_path = args.data if args.data.is_absolute() else ROOT / args.data
+    db_path = args.db if args.db.is_absolute() else ROOT / args.db
     prepare_output(output, args.force)
     values = headline_values()
     slide_01(output, values)
     slide_02(output)
     slide_03(output)
-    slide_04(output, data_path)
+    slide_04(output, data_path, db_path)
     slide_05(output)
     slide_06(output)
     slide_07(output)

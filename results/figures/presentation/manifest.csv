@@ -6,9 +6,9 @@ slide,file,source,purpose
 5,05_evaluation_protocols.png,Methodology contract,Protocol separation
 6,06_model_hypotheses.png,Implemented model contracts,Model-family map
 7,07_model_evidence.png,"Final, extension, and LDA result CSVs",Protocol-separated results
-8,08_bdt_metrics_and_seed_robustness.png,Final metrics and seed robustness CSVs,Primary-model evidence
+8,08_bdt_metrics_and_seed_robustness.png,Final metrics and seed robustness CSVs,BDT evidence
 9,09_feature_representation.png,Nested metrics and differences CSVs,Nested representation study
 10,10_physics_operating_points.png,Reviewed methodology ROC artifact,Fixed-test operating curve
 11,11_process_and_diagnostics.png,"Process, calibration, and learning CSVs",Diagnostics
-12,12_recommendation_and_limits.png,Reviewed project evidence,Recommendation
+12,12_results_summary.png,Reviewed project evidence,Results summary
 13,13_conclusion.png,Headline evidence CSVs,Conclusion

@@ -93,16 +93,36 @@ def run_audit(args: argparse.Namespace, events: pd.DataFrame) -> None:
     process_ranking.to_csv(process_auc_path, index=False)
     feature_audit.to_csv(feature_audit_path, index=False)
 
+    palette = {
+        "Training Majority": "#AAB4BD",
+        "R2 Cut": "#E8A273",
+        "Logistic Regression": "#7F8C98",
+        "Decision Tree": "#C59A7A",
+        "Linear SVM": "#9AA6B2",
+        "Histogram Gradient Boosting BDT": "#16B8C8",
+        "MLP (full)": "#7768E5",
+        "MLP (RFE-20)": "#A89FEA",
+    }
     fig, ax = plt.subplots(figsize=(8, 6))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
     for name, score in frozen.signal_scores.items():
         fpr, tpr, _ = roc_curve(frozen.y_test, score)
-        ax.semilogx(fpr.clip(min=1 / len(frozen.y_test)), tpr, label=name)
+        emphasized = name in {
+            "Histogram Gradient Boosting BDT", "MLP (full)", "MLP (RFE-20)"
+        }
+        ax.semilogx(
+            fpr.clip(min=1 / len(frozen.y_test)), tpr,
+            label=name, color=palette.get(name, "#9AA6B2"),
+            linewidth=2.6 if emphasized else 1.5,
+            alpha=1.0 if emphasized else 0.78,
+        )
     ax.set(
         xlabel="Background efficiency (log scale)", ylabel="Signal efficiency",
-        title="Frozen test ROC at physics operating points", xlim=(1e-4, 1), ylim=(0, 1),
+        xlim=(1e-4, 1), ylim=(0, 1),
     )
-    ax.grid(True, which="both", alpha=0.25)
-    ax.legend(fontsize=7)
+    ax.grid(True, which="both", color="#AAB4BD", alpha=0.20, linewidth=0.8)
+    ax.legend(fontsize=7, frameon=False)
     fig.tight_layout()
     fig.savefig(figure_path, dpi=180, bbox_inches="tight")
     plt.close(fig)
@@ -182,23 +202,32 @@ def run_diagnostics(args: argparse.Namespace, events: pd.DataFrame) -> None:
     args.figures_dir.mkdir(parents=True, exist_ok=True)
     calibration.to_csv(calibration_path, index=False)
     learning.to_csv(learning_path, index=False)
+    signal_color = "#16B8C8"
+    background_color = "#F28B43"
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
-    axes[0].plot(predicted, observed, "o-", label="BDT")
-    axes[0].plot([0, 1], [0, 1], "--", color="black", label="Perfect calibration")
+    fig.patch.set_facecolor("white")
+    axes[0].plot(predicted, observed, "o-", color=signal_color,
+                 linewidth=2.5, label="BDT")
+    axes[0].plot([0, 1], [0, 1], "--", color="#8795A1",
+                 label="Perfect calibration")
     axes[0].set(xlabel="Mean predicted signal probability",
-                ylabel="Observed signal fraction", title="Frozen-test calibration")
-    axes[0].legend()
+                ylabel="Observed signal fraction")
+    axes[0].legend(frameon=False)
     axes[1].errorbar(
         learning["training_rows"], learning["validation_roc_auc_mean"],
-        yerr=learning["validation_roc_auc_std"], marker="o", label="Validation",
+        yerr=learning["validation_roc_auc_std"], marker="o", linewidth=2.5,
+        color=signal_color, label="Validation",
     )
     axes[1].errorbar(
         learning["training_rows"], learning["train_roc_auc_mean"],
-        yerr=learning["train_roc_auc_std"], marker="o", label="Training",
+        yerr=learning["train_roc_auc_std"], marker="o", linewidth=2.5,
+        color=background_color, label="Training",
     )
-    axes[1].set(xlabel="Development training rows", ylabel="ROC-AUC",
-                title="BDT learning curve")
-    axes[1].legend()
+    axes[1].set(xlabel="Development training rows", ylabel="ROC-AUC")
+    axes[1].legend(frameon=False)
+    for axis in axes:
+        axis.set_facecolor("white")
+        axis.grid(color="#AAB4BD", alpha=0.20, linewidth=0.8)
     fig.tight_layout()
     fig.savefig(figure_path, dpi=180, bbox_inches="tight")
     plt.close(fig)
