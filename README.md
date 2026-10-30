@@ -19,7 +19,7 @@ and the frozen protocol has been evaluated once on held-out test data.
 - Support Vector Machine
 - Gradient Boosting BDT
 - Feed-forward neural network (MLP)
-- Experimental CNN, subject to a defensible feature representation
+- Physics-grouped CNN, with its feature representation stated explicitly
 
 Raw data, generated SQLite databases, trained models, and internal planning documents
 are deliberately excluded from Git.
@@ -77,15 +77,15 @@ The frozen protocol was evaluated once on 10,591 test events after refitting on
 
 The BDT is the strongest tested model. RFE reduces the MLP input from 59 to 20
 measured features while losing only 0.0017 ROC-AUC, supporting comparable—not
-improved—reduced-feature performance. The CNN is a valid experimental sixth
-family but does not outperform the BDT or either MLP. These conclusions apply to
+improved—reduced-feature performance. The CNN is one of the tested model
+families but does not outperform the BDT or either MLP. These conclusions apply to
 one fixed split of the instructor-provided simulated dataset; they are not claims
 of detector-data or cross-dataset generalization.
 
-## Post-hoc extensions
+## Development-cross-validation model studies
 
-The additional model is deliberately separated from the frozen held-out
-comparison. The extension runner evaluates one binary Random Forest on the frozen
+The Random Forest is evaluated separately from the frozen held-out comparison
+because it uses a different evidence protocol. Its runner evaluates the model on the frozen
 RFE-20 feature set using five-fold out-of-fold predictions on the original
 train+validation rows only. Original test rows are excluded.
 
@@ -103,7 +103,7 @@ features: accuracy 0.8595, precision 0.8513, recall 0.8756, F1 0.8633, and ROC-A
 0.9332. It demonstrates useful separation with the reduced feature set, but it is
 not evidence that Random Forest outranks a model measured on the frozen test set.
 
-The strongest frozen-test family is also studied under a matched post-hoc
+The strongest frozen-test family is also studied under a matched
 feature-reduction protocol. This runner evaluates the unchanged histogram BDT
 on all 59 measurements and the frozen RFE-20 subset using identical five-fold
 development-only out-of-fold predictions:
@@ -124,8 +124,8 @@ F1 0.8726, and ROC-AUC 0.9419. Removing 39 measurements therefore costs about
 a measured simplicity/performance trade-off, not evidence that reduction improves
 the BDT.
 
-A final neural-capacity extension uses the frozen RFE-20 measurements in a deeper
-PyTorch dense network: `20 → 128 → 64 → 1`, with LayerNorm, ReLU, dropout,
+A deep dense neural-network study uses the frozen RFE-20 measurements in a
+PyTorch network: `20 → 128 → 64 → 1`, with LayerNorm, ReLU, dropout,
 AdamW, and fold-internal early stopping. It produces five-fold development-only
 OOF predictions and never reads original test rows:
 
@@ -134,8 +134,8 @@ python -m scripts.run_deep_dense_extension
 ```
 
 Install `requirements-cnn.txt` for the optional PyTorch dependency. The guarded
-runner writes separate `posthoc_dense_*` artifacts; results remain exploratory
-and outside the frozen test ranking.
+runner writes separate `posthoc_dense_*` artifacts; these results are supporting
+development evidence and remain outside the frozen test ranking.
 
 The completed dense network reaches accuracy 0.8725, precision 0.8549, recall
 0.9012, F1 0.8774, and ROC-AUC 0.9432 across 60,015 OOF predictions. Its high
